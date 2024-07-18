@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor de Moedas</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 600px;
+            margin: auto;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        #conversionChart {
+            margin-top: 20px;
+            max-width: 100%;
+        }
+        #history {
+            margin-top: 20px;
+            font-size: 14px;
+            max-height: 150px;
+            overflow-y: auto;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Conversor de Moedas</h1>
+        <form id="conversion-form" class="mb-4">
+            <div class="mb-3">
+                <label for="amount" class="form-label">Valor:</label>
+                <input type="number" id="amount" class="form-control" placeholder="Digite o valor em reais (BRL)" required>
+            </div>
+            <div class="mb-3">
+                <label for="currency" class="form-label">Converter para:</label>
+                <select id="currency" class="form-select">
+                    <option value="USD">Dólar (USD)</option>
+                    <option value="EUR">Euro (EUR)</option>
+                    <option value="GBP">Libra (GBP)</option>
+                    <option value="JPY">Iene (JPY)</option>
+                    <option value="AUD">Dólar Australiano (AUD)</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Converter</button>
+        </form>
+        <div id="result" class="mb-4"></div>
+        <canvas id="conversionChart" class="mb-4"></canvas>
+        <div id="history" class="mb-4"></div>
+    </div>
+
+    <!-- Bootstrap JavaScript (opcional) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const apiKey = '98e746f105c3fa28d1a32698';
+        const apiUrl = 'https://api.exchangerate-api.com/v4/latest/';
+
+        document.getElementById('conversion-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const amount = document.getElementById('amount').value;
+            const currency = document.getElementById('currency').value;
+
+            try {
+                const response = await fetch(`${apiUrl}BRL?apikey=${apiKey}`);
+                const data = await response.json();
+                const rate = data.rates[currency];
+                const convertedAmount = (amount * rate).toFixed(2);
+                const date = new Date().toLocaleDateString();
+
+                document.getElementById('result').innerText = `R$ ${amount} é equivalente a ${convertedAmount} ${currency}`;
+
+                updateChart(data.rates);
+                updateHistory(amount, currency, convertedAmount, date);
+            } catch (error) {
+                console.error('Erro ao converter moeda:', error);
+                document.getElementById('result').innerText = 'Erro ao converter moeda. Por favor, tente novamente.';
+            }
+        });
+
+        let chart;
+
+        function updateChart(rates) {
+            const ctx = document.getElementById('conversionChart').getContext('2d');
+            const labels = Object.keys(rates);
+            const values = Object.values(rates);
+
+            if (chart) {
+                chart.destroy();
+            }
+
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Taxa de Câmbio',
+                        data: values,
+                        backgroundColor: 'rgba(0, 123, 255, 0.5)',
+                        borderColor: 'rgba(0, 123, 255, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateHistory(amount, currency, convertedAmount, date) {
+            const historyDiv = document.getElementById('history');
+            const historyItem = document.createElement('div');
+            historyItem.innerText = `${date}: R$ ${amount} -> ${convertedAmount} ${currency}`;
+            historyDiv.prepend(historyItem);
+        }
+    </script>
+</body>
+</html>
+
+
